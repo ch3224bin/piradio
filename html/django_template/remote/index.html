@@ -1,0 +1,122 @@
+<html>
+<head>
+	<title>Radio Remote Controller</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<meta name="viewport" content="width=device-width, minimum-scale=1, maximum-scale=1">
+	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />
+	<style type="text/css">
+	.wrap-loading {
+		position: fixed;
+		left: 0;
+		right: 0;
+		top: 0;
+		bottom: 0;
+		background: rgba(0,0,0,0.2);
+	}
+	.display-none {
+		display:none;
+	}
+	</style>
+</head>
+<body>
+	<div data-role="page">
+		<div class="ui-field-contain">
+			<label for="inpCurrent">현재 : </label>
+			<input id="inpCurrent" type="text" value="{{current}}">
+		</div>
+		<div class="ui-field-contain">
+			<label for="inpVolume">볼륨 : </label>
+			<input id="inpVolume" type="text" value="{{volume}}">
+		</div>
+		<div>
+			<a id="btnPlay" href="#" class="ui-btn ui-btn-inline">Play</a>
+			<a id="btnNext" href="#" class="ui-btn ui-btn-inline">Next</a>
+			<a id="btnPrev" href="#" class="ui-btn ui-btn-inline">Prev</a>
+			<a id="btnStop"  href="http://192.168.1.5:8000/stop/" class="ui-btn ui-btn-inline">Stop</a>
+		</div>
+		<div>
+			<a id="btnVolUp"  href="http://192.168.1.5:8000/volumeUp/" class="ui-btn ui-btn-inline">Vol+</a>
+			<a id="btnVolDown"  href="http://192.168.1.5:8000/volumeDown/" class="ui-btn ui-btn-inline">Vol-</a>
+		</div>
+		<select id="selUrl">
+		{% for item in playlist %}
+			<option value="{{item.id}}"
+			{% if item.url == current %}
+			selected="selected"
+			{% endif %}
+			>{{item.url}}</option>
+		{% endfor %}
+		</select>
+	</div>
+	<div class="wrap-loading display-none">
+		Loading...
+	</div>
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+<script>
+$("#btnStop,#btnVolUp,#btnVolDown").on("click", function(e) {
+	e.preventDefault();
+	$.ajax({
+		url : this.href,
+		dataType : "json",
+		beforeSend : function() {
+			$(".wrap-loading").show();
+		},
+		success : function(d) {
+			$(".wrap-loading").hide();
+			$("#inpCurrent").val(d.current);
+			$("#inpVolume").val(d.volume);
+		}
+	});
+});
+
+$("#btnPlay").on("click", function(e) {
+	e.preventDefault();
+	$("#selUrl").trigger("change");
+});
+
+$("#btnNext").on("click", function(e) {
+	e.preventDefault();
+	
+	var next = $("#selUrl option:selected").next();
+
+	if (next.length === 0) {
+		next = $("#selUrl option:first-child");
+	}
+
+	next
+	.attr("selected", "selected");
+	$("#selUrl").trigger("change");
+});
+
+$("#btnPrev").on("click", function(e) {
+	e.preventDefault();
+
+	var prev = $("#selUrl option:selected").prev();
+
+	if (prev.length === 0) {
+		prev = $("#selUrl option:last-child");
+	}
+
+	prev
+	.attr("selected", "selected");
+	$("#selUrl").trigger("change");
+});
+
+$("#selUrl").on("change", function(e) {
+	$.ajax({
+		url : '/seek/' +  this.value + '/',
+		dataType : "json",
+		beforeSend : function() {
+			$(".wrap-loading").show();
+		},
+		success : function(d) {
+			$(".wrap-loading").hide();
+			$("#inpCurrent").val(d.current);
+			$("#inpVolume").val(d.volume);
+		}
+	});
+});
+</script>
+</body>
+</html>
